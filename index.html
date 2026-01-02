@@ -22,8 +22,15 @@
             <details class="import-section">
                 <summary>Excelなどから一括貼り付け (Import)</summary>
                 <div class="import-container">
-                    <p class="import-hint">「区間名」のみ、または「区間名, 目標タイム」の形式で貼り付けてください。<br>※Excelからコピーした場合は自動的に対応します。</p>
-                    <textarea id="import-text" placeholder="入力例:&#10;Opening&#10;Boss 1, 1:30&#10;Boss 2, 12:45.5"></textarea>
+                    <p class="import-hint">
+                        <strong>形式:</strong> 「区間名」 または 「区間名 [タブ/カンマ] 目標タイム」<br>
+                        <span style="font-size: 0.9em; color: #666;">
+                        ※「1:30」や「90.5」などはスペース区切りでも認識されますが、<br>
+                         「0」や「120」などの<strong>整数のみ</strong>の場合は、区間名と誤認しないよう<strong>カンマ(,)</strong>で区切ってください。<br>
+                         (例: <code>Game Start, 0</code> / <code>Boss 1</code>)
+                        </span>
+                    </p>
+                    <textarea id="import-text" placeholder="入力例:&#10;Opening&#10;Game Start, 0&#10;Boss 1&#9;1:30&#10;Boss 2, 12:45.5"></textarea>
                     <button id="btn-import" class="btn-secondary">インポート実行</button>
                 </div>
             </details>
@@ -75,7 +82,8 @@
                 <span style="color: #f44336; font-weight: bold;">※入力を変更した際は、必ず「セットアップ完了・リセット」ボタンを押してください。<br>押さないと下の計測テーブルに反映されません。</span></p>
                 
                 <p><strong>2. インポート機能</strong><br>
-                Excelやメモ帳で作ったリスト（区間名と時間）をコピーして、「一括貼り付け」からまとめて登録できます。</p>
+                Excelやメモ帳で作ったリスト（区間名と時間）をコピーして、「一括貼り付け」からまとめて登録できます。<br>
+                整数の時間（0や90）を使う場合は、名前との間にカンマを入れてください。</p>
 
                 <p><strong>3. 計測</strong><br>
                 Startボタンまたはラップボタンで計測開始。<br>
