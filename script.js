@@ -23,7 +23,7 @@ const EL_BTN_IMPORT     = document.getElementById('btn-import');
 /**
  * 区間データの配列
  * @type {Array<{name: string, target: string}>}
- * name: 区間名, target: 目標タイム(秒・文字列)
+ * name: 区間名, target: 目標タイム(ユーザー入力文字列のまま保存)
  */
 let segmentsData = [
     { name: "Area 1", target: "" },
@@ -115,7 +115,7 @@ function clearAllData() {
 /**
  * テキストエリアから区間リストを一括インポートする関数
  * 改行区切りで区間を認識し、タブまたはカンマ区切りで「名前」と「目標タイム」を抽出する。
- * 「120」のような秒数、「1:30」のような分:秒、「1:30.55」のような小数を含む時間に対応。
+ * ★修正点: 時間文字列を変換せず、そのまま保存する仕様に変更。
  */
 function importSegments() {
     const text = EL_IMPORT_TEXT.value;
@@ -139,14 +139,11 @@ function importSegments() {
         const name = parts[0].trim();
         let target = "";
 
-        // 2列目があり、かつ時間として解釈できる場合は目標タイムとする
+        // 2列目がある場合、文字列としてそのまま取り込む
         if (parts.length > 1) {
-            const val = parts[1].trim();
-            // 時間解析関数を通す
-            const parsedSeconds = parseTimeInput(val);
-            if (parsedSeconds !== null) {
-                target = parsedSeconds.toString();
-            }
+            target = parts[1].trim();
+            // 一応、明らかなゴミデータ除去のためにparse checkしても良いが
+            // ユーザーが意図した文字列("1:30"等)をそのまま保持することを優先
         }
 
         if (name) {
@@ -209,6 +206,7 @@ function parseTimeInput(str) {
 /**
  * セットアップ画面の入力リストを描画する関数
  * segmentsDataに基づき、区間名と目標タイムの入力フィールドを動的に生成する。
+ * ★修正点: input type="text" に変更し、文字列のまま表示する。
  */
 function renderSetupList() {
     EL_LIST_CONTAINER.innerHTML = "";
@@ -228,14 +226,14 @@ function renderSetupList() {
             saveData(); 
         };
 
-        // 目標タイム入力フィールド（秒単位）
+        // 目標タイム入力フィールド
         const inputTarget = document.createElement('input');
-        inputTarget.type = "number";
-        inputTarget.placeholder = "目標(秒)";
-        inputTarget.value = seg.target;
-        inputTarget.title = "目標タイム（秒）。小数入力可。";
-        // step属性を追加してinput type="number"でも小数を許容
-        inputTarget.step = "0.001"; 
+        inputTarget.type = "text"; // ★numberからtextに変更
+        inputTarget.className = "input-target"; // ★CSS用のクラス付与
+        inputTarget.placeholder = "目標(1:30等)";
+        inputTarget.value = seg.target; // 保存されている文字列("1:30")をそのまま表示
+        inputTarget.title = "目標タイム。「90」や「1:30」のように入力可能。";
+        
         // 入力時に即時保存
         inputTarget.oninput = (e) => {
             segmentsData[index].target = e.target.value;
@@ -288,7 +286,7 @@ function removeSegment(index) {
 /**
  * セットアップを完了し、計測画面（テーブル）を初期化する関数
  * タイマーのリセット、比較対象（PBまたは目標）の決定、テーブルの再構築を行う。
- * 目標タイムの小数点精度を考慮した計算を行う。
+ * ★修正点: 文字列の目標タイムをここで秒数に変換して計算に使用する。
  */
 function finishSetup() {
     stopTimer();
@@ -317,8 +315,11 @@ function finishSetup() {
         if (hasPB) {
             refTimeMs = personalBestSplits[i];
         } else if (seg.target) {
-            // parseFloatを使用し、ミリ秒精度を維持するため1000倍して四捨五入
-            refTimeMs = Math.round(parseFloat(seg.target) * 1000); 
+            // 文字列を解析して秒数にし、ミリ秒へ変換
+            const parsed = parseTimeInput(seg.target);
+            if (parsed !== null) {
+                refTimeMs = Math.round(parsed * 1000); 
+            }
         }
         colRef.textContent = refTimeMs ? formatTimeShort(refTimeMs) : "-";
         
@@ -441,10 +442,11 @@ function recordSegmentTime(timeMs, index) {
     if (hasPB) {
         refTimeMs = personalBestSplits[index];
     } else {
-        const targetSec = segmentsData[index].target;
-        if (targetSec) {
-            // parseFloatを使用し、ミリ秒精度を維持するため1000倍して四捨五入
-            refTimeMs = Math.round(parseFloat(targetSec) * 1000);
+        const targetStr = segmentsData[index].target;
+        // 変更: 文字列から計算時に変換
+        const parsed = parseTimeInput(targetStr);
+        if (parsed !== null) {
+            refTimeMs = Math.round(parsed * 1000);
         }
     }
 

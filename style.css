@@ -105,6 +105,7 @@ button:active {
     margin-bottom: 8px;
 }
 
+/* 区間名入力欄 */
 .segment-row input[type="text"] {
     padding: 8px;
     flex: 2;
@@ -113,10 +114,10 @@ button:active {
     border-radius: 4px;
 }
 
-/* 目標時間の入力欄 */
-.segment-row input[type="number"] {
+/* 変更:目標時間の入力欄（クラス指定に変更） */
+.segment-row .input-target {
     padding: 8px;
-    width: 60px;
+    width: 80px; /* 文字列が入るので少し広げました */
     margin-right: 5px;
     border: 1px solid #ccc;
     border-radius: 4px;
