@@ -1,38 +1,96 @@
-/* 全体のレイアウト設定 */
+/* ==========================================================================
+   CSS Variables (カラーパレット・共通設定)
+   一箇所で色を変更できるように変数を定義しています
+   ========================================================================== */
+:root {
+	/* メインカラー */
+	--color-primary: #4CAF50;
+	/* 緑: 完了・肯定的なアクション */
+	--color-secondary: #eee;
+	/* 薄いグレー: 補助ボタン背景 */
+	--color-text-main: #333;
+	/* 黒: メインテキスト */
+	--color-text-sub: #666;
+	/* グレー: 補足テキスト */
+
+	/* アクションカラー */
+	--color-btn-start: #2196F3;
+	/* 青: スタート */
+	--color-btn-lap: #FF9800;
+	/* オレンジ: ラップ */
+	--color-btn-stop: #f44336;
+	/* 赤: ストップ・危険 */
+
+	/* 状態・判定カラー */
+	--color-diff-minus: #00b300;
+	/* 青緑: 速い (マイナス) */
+	--color-diff-plus: #e60000;
+	/* 赤: 遅い (プラス) */
+	--color-highlight-bg: #e0f7fa;
+	/* 水色: 現在の行の背景 */
+	--color-highlight-border: #00bcd4;
+	/* シアン: 現在の行の枠線 */
+
+	/* レイアウト・背景 */
+	--bg-body: #f4f4f4;
+	--bg-container: #fff;
+	--bg-setup: #fafafa;
+	--bg-import: #f0f8ff;
+
+	/* ボーダー */
+	--border-color: #ddd;
+	--border-input: #ccc;
+}
+
+/* ==========================================================================
+   Base & Layout (基本設定・コンテナ)
+   ========================================================================== */
+
+/* ページ全体の基本設定 */
 body {
 	font-family: sans-serif;
 	text-align: center;
-	background-color: #f4f4f4;
-	color: #333;
+	background-color: var(--bg-body);
+	color: var(--color-text-main);
 	margin: 0;
 	padding: 20px;
 }
 
+/* メインコンテンツのラッパー */
 .container {
 	max-width: 700px;
 	margin: 0 auto;
-	background: #fff;
+	background: var(--bg-container);
 	padding: 20px;
 	border-radius: 10px;
 	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-/* タイマー表示部 */
+/* ==========================================================================
+   Timer Display (タイマー表示部)
+   ========================================================================== */
+
+/* 大きなタイム表示 */
 #timer-display {
 	font-size: 3.5em;
 	font-weight: bold;
 	margin: 10px 0;
 	font-family: 'Courier New', Courier, monospace;
-	/* 等幅フォント */
+	/* 等幅フォントで数字の揺れを防ぐ */
 	font-variant-numeric: tabular-nums;
-	/* 数字の幅を揃える */
+	/* 数字の幅を揃えるOpenType機能 */
 }
 
+/* 比較対象のインフォメーション */
 #comparison-info {
 	font-size: 0.9em;
-	color: #666;
+	color: var(--color-text-sub);
 	margin-bottom: 15px;
 }
+
+/* ==========================================================================
+   Controls & Buttons (操作ボタン類)
+   ========================================================================== */
 
 /* ボタン共通スタイル */
 button {
@@ -48,62 +106,85 @@ button:hover {
 
 button:active {
 	transform: scale(0.98);
+	/* クリック時に少し凹ませる */
 }
 
-/* セットアップエリア */
+/* セットアップ用の補助ボタン (グレー) */
+.btn-secondary {
+	padding: 8px 16px;
+	background-color: var(--color-secondary);
+	color: var(--color-text-main);
+	margin: 5px;
+}
+
+/* セットアップ完了ボタン (緑) */
+.btn-primary {
+	padding: 8px 16px;
+	background-color: var(--color-primary);
+	color: white;
+	font-weight: bold;
+	margin: 5px;
+}
+
+/* 削除・クリア系のテキストリンク風ボタン */
+.btn-danger-text {
+	background: none;
+	color: var(--color-btn-stop);
+	font-size: 0.8em;
+	text-decoration: underline;
+	margin-left: 10px;
+}
+
+/* 計測操作ボタン (Start/Lap/Stop) */
+.controls .btn-control {
+	font-size: 1.2em;
+	padding: 15px 25px;
+	margin: 5px;
+	color: white;
+}
+
+#btn-start {
+	background-color: var(--color-btn-start);
+}
+
+#btn-lap {
+	background-color: var(--color-btn-lap);
+}
+
+#btn-stop {
+	background-color: var(--color-btn-stop);
+}
+
+/* リスト削除ボタン (×) */
+.btn-remove {
+	padding: 5px 10px;
+	background: #ff6b6b;
+	/* 明るめの赤 */
+	color: white;
+	font-weight: bold;
+}
+
+/* ==========================================================================
+   Setup Area (設定エリア)
+   ========================================================================== */
+
+/* 設定エリアの枠組み */
 #setup-area {
-	border: 1px solid #ddd;
+	border: 1px solid var(--border-color);
 	padding: 15px;
 	margin-bottom: 20px;
 	border-radius: 8px;
-	background: #fafafa;
+	background: var(--bg-setup);
 }
 
+/* 説明文 */
 .instruction {
 	font-size: 0.85em;
-	color: #666;
+	color: var(--color-text-sub);
 	margin-bottom: 10px;
 }
 
-/* インポート機能のスタイル */
-.import-section {
-	margin-bottom: 15px;
-	border-bottom: 1px dashed #ccc;
-	padding-bottom: 10px;
-	text-align: left;
-}
-
-.import-section summary {
-	cursor: pointer;
-	font-size: 0.9em;
-	color: #2196F3;
-	font-weight: bold;
-	margin-bottom: 5px;
-}
-
-.import-container {
-	padding: 10px;
-	background: #f0f8ff;
-	border-radius: 5px;
-}
-
-.import-hint {
-	font-size: 0.8em;
-	color: #666;
-	margin: 0 0 5px 0;
-}
-
-#import-text {
-	width: 95%;
-	height: 80px;
-	padding: 5px;
-	font-size: 0.9em;
-	border: 1px solid #ccc;
-	border-radius: 4px;
-	margin-bottom: 5px;
-}
-
-/* 区間リスト行のスタイル */
+/* 区間設定の各行 (Flexboxで横並び) */
 .segment-row {
 	display: flex;
 	align-items: center;
@@ -115,112 +196,108 @@ button:active {
 .segment-row input[type="text"] {
 	padding: 8px;
 	flex: 2;
+	/* 余った幅を埋める */
 	margin-right: 5px;
-	border: 1px solid #ccc;
+	border: 1px solid var(--border-input);
 	border-radius: 4px;
 }
 
-/* 目標時間の入力欄 */
+/* 目標タイム入力欄 */
 .segment-row .input-target {
 	padding: 8px;
 	width: 60px;
 	margin-right: 5px;
-	border: 1px solid #ccc;
+	border: 1px solid var(--border-input);
 	border-radius: 4px;
 	text-align: right;
 }
 
-.btn-remove {
-	padding: 5px 10px;
-	background: #ff6b6b;
-	color: white;
+/* --- インポート機能 (details/summary) --- */
+.import-section {
+	margin-bottom: 15px;
+	border-bottom: 1px dashed var(--border-input);
+	padding-bottom: 10px;
+	text-align: left;
+}
+
+.import-section summary {
+	cursor: pointer;
+	font-size: 0.9em;
+	color: var(--color-btn-start);
 	font-weight: bold;
+	margin-bottom: 5px;
 }
 
-/* セットアップ用ボタン */
-.btn-secondary {
-	padding: 8px 16px;
-	background-color: #eee;
-	color: #333;
-	margin: 5px;
+.import-container {
+	padding: 10px;
+	background: var(--bg-import);
+	border-radius: 5px;
 }
 
-.btn-primary {
-	padding: 8px 16px;
-	background-color: #4CAF50;
-	color: white;
-	font-weight: bold;
-	margin: 5px;
-}
-
-.btn-danger-text {
-	background: none;
-	color: #f44336;
+.import-hint {
 	font-size: 0.8em;
-	text-decoration: underline;
-	margin-left: 10px;
+	color: var(--color-text-sub);
+	margin: 0 0 5px 0;
 }
 
-/* メイン操作ボタン */
-.controls .btn-control {
-	font-size: 1.2em;
-	padding: 15px 25px;
-	margin: 5px;
-	color: white;
+#import-text {
+	width: 95%;
+	height: 80px;
+	padding: 5px;
+	font-size: 0.9em;
+	border: 1px solid var(--border-input);
+	border-radius: 4px;
+	margin-bottom: 5px;
 }
 
-#btn-start {
-	background-color: #2196F3;
-}
+/* ==========================================================================
+   Result Table (計測結果テーブル)
+   ========================================================================== */
 
-#btn-lap {
-	background-color: #FF9800;
-}
-
-#btn-stop {
-	background-color: #f44336;
-}
-
-/* 計測テーブル */
 #lap-table {
 	margin: 20px auto;
 	border-collapse: collapse;
 	width: 100%;
 	table-layout: fixed;
+	/* 列幅を固定してレイアウト崩れを防ぐ */
 }
 
 #lap-table th,
 #lap-table td {
-	border: 1px solid #ddd;
+	border: 1px solid var(--border-color);
 	padding: 10px 8px;
 	white-space: nowrap;
+	/* 折り返し禁止 */
 	overflow: hidden;
+	/* はみ出し非表示 */
 	text-overflow: ellipsis;
+	/* ...表示 */
 	font-size: 0.95em;
 }
 
 #lap-table th {
-	background-color: #eee;
+	background-color: var(--color-secondary);
 	font-size: 0.9em;
 }
 
-/* 列ごとのスタイル調整 */
+/* --- 列ごとの幅とスタイル調整 --- */
+/* 区間名 */
 #lap-table th:nth-child(1),
 #lap-table td:nth-child(1) {
 	text-align: left;
 	width: 30%;
 }
 
-/* 区間名 */
+/* 目標/Best */
 #lap-table th:nth-child(2),
 #lap-table td:nth-child(2) {
 	text-align: right;
 	width: 22%;
 	font-family: monospace;
-	color: #666;
+	color: var(--color-text-sub);
 }
 
-/* 目標/Best */
+/* タイム (現在) */
 #lap-table th:nth-child(3),
 #lap-table td:nth-child(3) {
 	text-align: right;
@@ -229,7 +306,7 @@ button:active {
 	font-weight: bold;
 }
 
-/* タイム */
+/* 差 (Diff) */
 #lap-table th:nth-child(4),
 #lap-table td:nth-child(4) {
 	text-align: right;
@@ -237,38 +314,34 @@ button:active {
 	font-family: monospace;
 }
 
-/* 差 */
-
-/* 現在の区間のハイライト */
+/* --- 行の状態スタイル --- */
+/* 現在計測中の行ハイライト */
 .current-segment {
-	background-color: #e0f7fa;
-	box-shadow: inset 0 0 0 3px #00bcd4;
+	background-color: var(--color-highlight-bg);
+	box-shadow: inset 0 0 0 3px var(--color-highlight-border);
 }
 
 /* 差分の色分け */
 .diff-minus {
-	color: #00b300;
+	color: var(--color-diff-minus);
 	font-weight: bold;
 }
 
-/* 速い（緑） */
 .diff-plus {
-	color: #e60000;
+	color: var(--color-diff-plus);
 	font-weight: bold;
 }
-
-/* 遅い（赤） */
-
 
 /* ==========================================================================
-   新規追加 モーダル用スタイル
+   Modal (モーダルウィンドウ)
    ========================================================================== */
+
 .modal {
 	display: none;
 	/* 初期状態は非表示 */
 	position: fixed;
 	z-index: 1000;
-	/* 最前面に */
+	/* 最前面に表示 */
 	left: 0;
 	top: 0;
 	width: 100%;
@@ -279,9 +352,9 @@ button:active {
 }
 
 .modal-content {
-	background-color: #fefefe;
+	background-color: #fff;
 	margin: 10% auto;
-	/* 画面上部から少し下げて中央寄せ */
+	/* 上から少し下げて中央配置 */
 	padding: 20px;
 	border: 1px solid #888;
 	width: 90%;

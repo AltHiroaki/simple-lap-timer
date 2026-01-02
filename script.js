@@ -1,36 +1,45 @@
-/* 
-==========================================================================
-CONSTANTS & VARIABLES (定義・状態管理)
-========================================================================== 
-*/
+/* ==========================================================================
+   1. SETTINGS & DOM ELEMENTS (設定・DOM要素の取得)
+   ========================================================================== */
 
-// --- UI要素の参照 ---
-const EL_TIMER_DISPLAY = document.getElementById('timer-display');
-const EL_COMPARISON = document.getElementById('comparison-target-name');
-const EL_BTN_START = document.getElementById('btn-start');
-const EL_BTN_LAP = document.getElementById('btn-lap');
-const EL_BTN_STOP = document.getElementById('btn-stop');
-const EL_LIST_CONTAINER = document.getElementById('segment-list-container');
-const EL_BTN_ADD = document.getElementById('btn-add-segment');
-const EL_BTN_DONE = document.getElementById('btn-done-setup');
-const EL_BTN_CLEAR = document.getElementById('btn-clear-data');
-const EL_LAP_LIST_BODY = document.getElementById('lap-list-body');
+// LocalStorageの保存キー
+const LS_KEY_DATA = "rta_timer_data_v2";
 
-// インポート機能用UI
-const EL_IMPORT_TEXT = document.getElementById('import-text');
-const EL_BTN_IMPORT = document.getElementById('btn-import');
+// --- メイン画面のUI要素 ---
+const EL = {
+	TIMER_DISPLAY: document.getElementById('timer-display'),
+	COMPARISON: document.getElementById('comparison-target-name'),
+	LIST_CONTAINER: document.getElementById('segment-list-container'),
+	LAP_LIST_BODY: document.getElementById('lap-list-body'),
 
-// モーダル用UI
-const EL_BTN_HELP = document.getElementById('btn-help');
-const EL_MODAL = document.getElementById('help-modal');
-const EL_BTN_CLOSE_MODAL = document.querySelector('.close-modal');
+	// 操作ボタン
+	BTN_START: document.getElementById('btn-start'),
+	BTN_LAP: document.getElementById('btn-lap'),
+	BTN_STOP: document.getElementById('btn-stop'),
 
-// --- アプリケーションの状態 ---
+	// 設定・データ操作ボタン
+	BTN_ADD: document.getElementById('btn-add-segment'),
+	BTN_DONE: document.getElementById('btn-done-setup'),
+	BTN_CLEAR: document.getElementById('btn-clear-data'),
+
+	// インポート関連
+	IMPORT_TEXT: document.getElementById('import-text'),
+	BTN_IMPORT: document.getElementById('btn-import'),
+
+	// モーダル関連
+	BTN_HELP: document.getElementById('btn-help'),
+	MODAL: document.getElementById('help-modal'),
+	BTN_CLOSE_MODAL: document.querySelector('.close-modal')
+};
+
+/* ==========================================================================
+   2. APP STATE (アプリケーションの状態管理)
+   ========================================================================== */
 
 /**
- * 区間データの配列
- * @type {Array<{name: string, target: string}>}
- * name: 区間名, target: 目標タイム(ユーザー入力文字列のまま保存)
+ * 区間データの配列 (ユーザー設定)
+ * @type {Array<{name: string, target: string}>} 
+ * targetはユーザーが入力した文字列（"1:30"など）をそのまま保持する
  */
 let segmentsData = [
 	{ name: "Area 1", target: "" },
@@ -41,40 +50,40 @@ let segmentsData = [
 ];
 
 /**
- * 自己ベスト記録（累積タイム）の配列
+ * 自己ベスト記録 (PB)
  * @type {number[]} ミリ秒単位の経過時間の配列
  */
 let personalBestSplits = [];
 
-// タイマー計測用変数
-let startTime = 0;           // 計測開始時刻（Unix Time）
-let elapsedTime = 0;         // 現在の経過時間（ミリ秒）
-let timerInterval = null;    // setIntervalのID
-let isRunning = false;       // 動作中フラグ
-let currentSegmentIndex = 0; // 現在計測中の区間インデックス
-let currentRunSplits = [];   // 今回の計測中のタイム記録用配列
-
-// LocalStorageのキー定義
-const LS_KEY_DATA = "rta_timer_data_v2"; // データ保存用キー
+// タイマー関連の状態
+let timerState = {
+	startTime: 0,           // 計測開始時刻 (Unix Time)
+	elapsedTime: 0,         // 経過時間 (ミリ秒)
+	intervalId: null,       // setIntervalのID
+	isRunning: false,       // 動作中フラグ
+	currentSegmentIndex: 0, // 現在計測中の区間インデックス
+	currentRunSplits: []    // 今回の計測ラップタイム配列
+};
 
 /* ==========================================================================
-   FUNCTIONS (ロジック・操作)
+   3. APP INITIALIZATION (初期化処理)
    ========================================================================== */
 
 /**
- * アプリ起動時の初期化処理を行う関数
- * 保存データの読み込み、UIの構築、初期状態のセットアップを順に実行する。
+ * アプリ起動時のメイン処理
  */
 function initApp() {
-	loadData();
-	renderSetupList();
-	finishSetup();
+	loadData();        // 1. 保存データを読み込む
+	renderSetupList(); // 2. 設定画面を描画する
+	finishSetup();     // 3. 計測画面を初期化する
 }
 
+/* ==========================================================================
+   4. DATA MANAGEMENT (データ管理: 保存・読込・削除・インポート)
+   ========================================================================== */
+
 /**
- * LocalStorageからデータを読み込む関数
- * 保存されたJSONデータを解析し、segmentsData および personalBestSplits に反映する。
- * データが存在しない場合はデフォルト値を使用する。
+ * LocalStorageからデータを読み込む
  */
 function loadData() {
 	const json = localStorage.getItem(LS_KEY_DATA);
@@ -90,9 +99,7 @@ function loadData() {
 }
 
 /**
- * LocalStorageへ現在のデータを保存する関数
- * segmentsData（区間設定）と personalBestSplits（自己ベスト）をJSON化して保存する。
- * 設定変更時や記録更新時に呼び出される。
+ * 現在の状態をLocalStorageへ保存する
  */
 function saveData() {
 	const data = {
@@ -103,80 +110,65 @@ function saveData() {
 }
 
 /**
- * データを全消去する関数
- * ユーザーの確認後、LocalStorageとメモリ上のデータを初期化し、画面をリセットする。
+ * データを全消去する
  */
 function clearAllData() {
 	if (!confirm("自己ベスト記録を含め、全ての設定を削除しますか？\nこの操作は取り消せません。")) return;
 
 	localStorage.removeItem(LS_KEY_DATA);
+
 	// 初期状態へリセット
 	segmentsData = [{ name: "Segment 1", target: "" }];
 	personalBestSplits = [];
 
-	// 画面再描画
 	renderSetupList();
 	finishSetup();
 }
 
 /**
- * テキストエリアから区間リストを一括インポートする関数
- * 修正: 全角スペースや半角スペース区切りにも対応
+ * テキストエリアから区間リストを一括インポートする
+ * (タブ区切り、カンマ区切り、スペース区切りに対応)
  */
 function importSegments() {
-	const text = EL_IMPORT_TEXT.value;
+	const text = EL.IMPORT_TEXT.value;
 	if (!text || !text.trim()) {
 		alert("テキストエリアが空です。貼り付けてから実行してください。");
 		return;
 	}
 
-	// ユーザーへの確認
 	if (!confirm("現在のリストを上書きしてインポートしますか？\n※既存の区間設定とベスト記録はリセットされます。")) return;
 
 	const lines = text.split('\n');
 	const newSegments = [];
 
 	lines.forEach(line => {
-		if (!line.trim()) return; // 空行はスキップ
+		if (!line.trim()) return;
 
 		let name = line.trim();
 		let target = "";
 
-		// 1. 明確な区切り文字（タブ、カンマ、読点、全角スペース）があるかチェック
-		// \t=タブ, ,=カンマ, 、=読点, \u3000=全角スペース
+		// 1. 明確な区切り文字（タブ、カンマ、読点、全角スペース）チェック
 		const delimiterMatch = line.match(/[\t,、\u3000]/);
 
 		if (delimiterMatch) {
-			// 明確な区切り文字がある場合、それで分割
 			const parts = line.split(/[\t,、\u3000]/);
-			// 空白を除去して有効なパーツだけ抽出
 			const validParts = parts.map(p => p.trim()).filter(p => p !== "");
-
 			if (validParts.length >= 2) {
 				name = validParts[0];
-				// 時間は最後の要素に入っていると仮定（間に空のセルなどがある場合への対策）
 				target = validParts[1];
 			}
 		} else {
-			// 2. 明確な区切りがない場合、半角スペースでの分割を試みる
-			// ただし "Boss 1" のような名前にスペースが入るケースを考慮し、
-			// 「末尾が時間っぽい形式（コロンやドットを含む）」の場合のみ分割する
+			// 2. スペース区切りの解析 (末尾が時間っぽい場合のみ分割)
 			const spaceMatch = line.match(/^(.*?)[\s]+([\d:.]+)$/);
-
 			if (spaceMatch) {
-				const potentialName = spaceMatch[1];
 				const potentialTime = spaceMatch[2];
-
-				// 時間部分にコロン(:)かドット(.)が含まれている場合のみ時間とみなす
-				// 例: "Boss 1 1:30" -> OK ("Boss 1", "1:30")
-				// 例: "Boss 1" -> NG (時間がないのでそのまま名前にする)
+				// コロンかドットを含む場合のみ時間とみなす (整数の誤爆防止)
 				if (potentialTime.includes(':') || potentialTime.includes('.')) {
-					name = potentialName;
+					name = spaceMatch[1];
 					target = potentialTime;
 				}
 			}
 		}
-
 		newSegments.push({ name: name, target: target });
 	});
 
@@ -185,84 +177,53 @@ function importSegments() {
 		return;
 	}
 
-	// データの更新
+	// 更新処理
 	segmentsData = newSegments;
-	personalBestSplits = []; // 区間が変わるためPBはリセット
-	EL_IMPORT_TEXT.value = ""; // 入力欄をクリア
+	personalBestSplits = []; // 区間構成が変わるためPBはリセット
+	EL.IMPORT_TEXT.value = "";
 
 	saveData();
 	renderSetupList();
 	finishSetup();
 
-	// detailsタグを閉じる（UIの見栄えのため）
+	// detailsタグを閉じる
 	const details = document.querySelector('.import-section');
 	if (details) details.removeAttribute('open');
 
 	alert("インポートが完了しました。");
 }
 
-/**
- * 文字列の時間表記を「秒数（数値）」に変換するヘルパー関数
- * mm:ss や hh:mm:ss、および小数点（ミリ秒）に対応。
- * @param {string} str - 入力文字列 (例: "1:30.5", "90", "1:05:20")
- * @returns {number|null} 変換できた場合は秒数、失敗した場合はnull
- */
-function parseTimeInput(str) {
-	if (!str) return null;
-
-	// コロンが含まれている場合 (hh:mm:ss.ms または mm:ss.ms)
-	if (str.includes(':')) {
-		const parts = str.split(':').map(part => parseFloat(part));
-		// 数字以外が含まれていたら解析失敗
-		if (parts.some(isNaN)) return null;
-
-		if (parts.length === 3) {
-			// hh:mm:ss.ms -> 秒に換算
-			return (parts[0] * 3600) + (parts[1] * 60) + parts[2];
-		} else if (parts.length === 2) {
-			// mm:ss.ms -> 秒に換算
-			return (parts[0] * 60) + parts[1];
-		}
-	}
-	// コロンがない場合（単なる秒数とみなす）
-	else {
-		const val = parseFloat(str);
-		return isNaN(val) ? null : val;
-	}
-	return null; // フォーマット不一致
-}
+/* ==========================================================================
+   5. UI RENDERING (画面描画ロジック)
+   ========================================================================== */
 
 /**
- * セットアップ画面の入力リストを描画する関数
- * segmentsDataに基づき、区間名と目標タイムの入力フィールドを動的に生成する。
+ * 設定画面（リスト編集エリア）を描画する
  */
 function renderSetupList() {
-	EL_LIST_CONTAINER.innerHTML = "";
+	EL.LIST_CONTAINER.innerHTML = "";
 
 	segmentsData.forEach((seg, index) => {
 		const div = document.createElement('div');
 		div.className = 'segment-row';
 
-		// 区間名入力フィールド
+		// 区間名入力
 		const inputName = document.createElement('input');
 		inputName.type = "text";
 		inputName.value = seg.name;
 		inputName.placeholder = `区間 ${index + 1}`;
-		// 入力時に即時保存
 		inputName.oninput = (e) => {
 			segmentsData[index].name = e.target.value;
 			saveData();
 		};
 
-		// 目標タイム入力フィールド
+		// 目標タイム入力
 		const inputTarget = document.createElement('input');
 		inputTarget.type = "text";
 		inputTarget.className = "input-target";
 		inputTarget.placeholder = "目標(1:30等)";
 		inputTarget.value = seg.target;
-		inputTarget.title = "目標タイム。「90」や「1:30」のように入力可能。";
-
-		// 入力時に即時保存
+		inputTarget.title = "目標タイムを入力";
 		inputTarget.oninput = (e) => {
 			segmentsData[index].target = e.target.value;
 			saveData();
@@ -277,58 +238,27 @@ function renderSetupList() {
 		div.appendChild(inputName);
 		div.appendChild(inputTarget);
 		div.appendChild(delBtn);
-		EL_LIST_CONTAINER.appendChild(div);
+		EL.LIST_CONTAINER.appendChild(div);
 	});
 }
 
 /**
- * 新しい区間を追加する関数
- * 配列の末尾に空の区間データを追加し、画面を更新・保存する。
- */
-function addSegment() {
-	segmentsData.push({ name: "", target: "" });
-	renderSetupList();
-	saveData();
-}
-
-/**
- * 指定されたインデックスの区間を削除する関数
- * 区間数が1つ未満にならないよう制御する。
- * 区間構造が変わるため、整合性維持のために自己ベスト記録はリセットされる。
- * @param {number} index - 削除対象のインデックス
- */
-function removeSegment(index) {
-	if (segmentsData.length <= 1) {
-		alert("これ以上削除できません");
-		return;
-	}
-	segmentsData.splice(index, 1);
-
-	// 区間構成が変わると過去の記録と比較できないためリセット
-	personalBestSplits = [];
-
-	renderSetupList();
-	saveData();
-}
-
-/**
- * セットアップを完了し、計測画面（テーブル）を初期化する関数
- * タイマーのリセット、比較対象（PBまたは目標）の決定、テーブルの再構築を行う。
- * 文字列の目標タイムをここで秒数に変換して計算に使用する。
+ * 計測画面（テーブル）を初期化・再構築する
+ * (セットアップ完了時やリセット時に呼ばれる)
  */
 function finishSetup() {
 	stopTimer();
-	elapsedTime = 0;
-	currentSegmentIndex = 0;
-	currentRunSplits = [];
-	EL_TIMER_DISPLAY.textContent = "00:00:00.000";
+	timerState.elapsedTime = 0;
+	timerState.currentSegmentIndex = 0;
+	timerState.currentRunSplits = [];
+	EL.TIMER_DISPLAY.textContent = "00:00:00.000";
 
-	// 比較対象の決定（PBが全区間分あればPB優先、なければ目標タイム）
+	// 比較対象の表示切り替え (PBがあればPB、なければTarget)
 	const hasPB = (personalBestSplits.length === segmentsData.length);
-	EL_COMPARISON.textContent = hasPB ? "比較: 自己ベスト (PB)" : "比較: 目標タイム (Target)";
+	EL.COMPARISON.textContent = hasPB ? "比較: 自己ベスト (PB)" : "比較: 目標タイム (Target)";
 
 	// テーブル生成
-	EL_LAP_LIST_BODY.innerHTML = "";
+	EL.LAP_LIST_BODY.innerHTML = "";
 
 	segmentsData.forEach((seg, i) => {
 		const row = document.createElement('tr');
@@ -337,13 +267,14 @@ function finishSetup() {
 		const colName = document.createElement('td');
 		colName.textContent = seg.name || `Segment ${i + 1}`;
 
-		// 2. 目標/Bestタイム（基準タイム）
+		// 2. 目標/Bestタイム (計算用基準値)
 		const colRef = document.createElement('td');
 		let refTimeMs = null;
+
 		if (hasPB) {
 			refTimeMs = personalBestSplits[i];
 		} else if (seg.target) {
-			// 文字列を解析して秒数にし、ミリ秒へ変換
+			// 文字列時間をミリ秒に変換
 			const parsed = parseTimeInput(seg.target);
 			if (parsed !== null) {
 				refTimeMs = Math.round(parsed * 1000);
@@ -351,11 +282,11 @@ function finishSetup() {
 		}
 		colRef.textContent = refTimeMs ? formatTimeShort(refTimeMs) : "-";
 
-		// 3. タイム（現在計測値）
+		// 3. タイム (空欄)
 		const colTime = document.createElement('td');
 		colTime.textContent = "-";
 
-		// 4. 差分 (Diff)
+		// 4. 差分 (空欄)
 		const colDiff = document.createElement('td');
 		colDiff.textContent = "";
 
@@ -363,107 +294,120 @@ function finishSetup() {
 		row.appendChild(colRef);
 		row.appendChild(colTime);
 		row.appendChild(colDiff);
-		EL_LAP_LIST_BODY.appendChild(row);
+		EL.LAP_LIST_BODY.appendChild(row);
 	});
 }
 
-
-// --- タイマー処理 ---
+/**
+ * 区間の追加
+ */
+function addSegment() {
+	segmentsData.push({ name: "", target: "" });
+	renderSetupList();
+	saveData();
+}
 
 /**
- * タイマーを開始する関数
- * 停止中であれば現在時刻を基準にインターバル処理を開始する。
+ * 区間の削除
  */
+function removeSegment(index) {
+	if (segmentsData.length <= 1) {
+		alert("これ以上削除できません");
+		return;
+	}
+	segmentsData.splice(index, 1);
+	personalBestSplits = []; // 構成が変わるのでPBリセット
+	renderSetupList();
+	saveData();
+}
+
+/* ==========================================================================
+   6. TIMER ENGINE (タイマー制御ロジック)
+   ========================================================================== */
+
 function startTimer() {
-	if (isRunning) return;
-	startTime = Date.now() - elapsedTime;
-	timerInterval = setInterval(updateDisplay, 10);
-	isRunning = true;
+	if (timerState.isRunning) return;
+
+	// 現在時刻 - これまでの経過時間 = 開始基準点
+	timerState.startTime = Date.now() - timerState.elapsedTime;
+	timerState.intervalId = setInterval(updateDisplay, 10);
+	timerState.isRunning = true;
+
 	highlightCurrentSegment();
 }
 
-/**
- * タイマーを停止する関数
- * インターバル処理を解除する。
- */
 function stopTimer() {
-	if (!isRunning) return;
-	clearInterval(timerInterval);
-	isRunning = false;
+	if (!timerState.isRunning) return;
+
+	clearInterval(timerState.intervalId);
+	timerState.isRunning = false;
 }
 
 /**
- * ラップ（区間切り替え）処理を行う関数
- * - 停止中はタイマーを開始する。
- * - 計測中は現在の区間タイムを記録し、次の区間へ進む。
- * - 最終区間完了時はタイマーを停止し、記録保存判定を行う。
+ * ラップ/区間通過処理
  */
 function triggerLap() {
-	// 要件：開始スイッチもしくはラップスイッチを押すとタイマーが始動する
-	if (!isRunning) {
+	// 停止中ならスタートさせる
+	if (!timerState.isRunning) {
 		startTimer();
 		return;
 	}
 
-	// まだ未計測の区間が残っている場合
-	if (currentSegmentIndex < segmentsData.length) {
-		// 現在の経過時間を記録・表示
-		recordSegmentTime(elapsedTime, currentSegmentIndex);
-		currentRunSplits.push(elapsedTime);
+	// まだ区間が残っている場合
+	if (timerState.currentSegmentIndex < segmentsData.length) {
+		// 現在のタイムを記録
+		recordSegmentTime(timerState.elapsedTime, timerState.currentSegmentIndex);
+		timerState.currentRunSplits.push(timerState.elapsedTime);
 
-		currentSegmentIndex++;
+		timerState.currentSegmentIndex++;
 
 		// 全区間終了チェック
-		if (currentSegmentIndex >= segmentsData.length) {
+		if (timerState.currentSegmentIndex >= segmentsData.length) {
 			stopTimer();
-			checkAndSavePB(); // 自己ベスト更新チェック
+			checkAndSavePB();
 		} else {
-			// 次の区間をハイライト
 			highlightCurrentSegment();
 		}
 	}
 }
 
 /**
- * 画面の時刻表示を更新する関数
- * setIntervalにより定期的に呼び出される。
+ * 画面更新 (10msごとに呼ばれる)
  */
 function updateDisplay() {
 	const now = Date.now();
-	elapsedTime = now - startTime;
-	EL_TIMER_DISPLAY.textContent = formatTime(elapsedTime);
+	timerState.elapsedTime = now - timerState.startTime;
+	EL.TIMER_DISPLAY.textContent = formatTime(timerState.elapsedTime);
 }
 
-// --- 記録・表示関連 ---
-
 /**
- * 現在計測中の区間行（テーブル）をハイライト表示する関数
+ * 現在の行をハイライトする
  */
 function highlightCurrentSegment() {
-	const rows = EL_LAP_LIST_BODY.getElementsByTagName('tr');
-	// 全行のクラスをリセット
+	const rows = EL.LAP_LIST_BODY.getElementsByTagName('tr');
+	// 全てのリセット
 	for (let i = 0; i < rows.length; i++) rows[i].classList.remove('current-segment');
-	// 対象行にクラスを付与
-	if (currentSegmentIndex < rows.length) rows[currentSegmentIndex].classList.add('current-segment');
+	// 対象行のハイライト
+	if (timerState.currentSegmentIndex < rows.length) {
+		rows[timerState.currentSegmentIndex].classList.add('current-segment');
+	}
 }
 
 /**
- * 区間タイムをテーブルに書き込み、比較対象との差分を計算して表示する関数
- * @param {number} timeMs - 現在の経過時間（ミリ秒）
- * @param {number} index - 対象の区間インデックス
+ * 区間タイムの記録と差分計算
  */
 function recordSegmentTime(timeMs, index) {
-	const rows = EL_LAP_LIST_BODY.getElementsByTagName('tr');
+	const rows = EL.LAP_LIST_BODY.getElementsByTagName('tr');
 	if (index >= rows.length) return;
 
 	const row = rows[index];
 	const cellTime = row.cells[2];
 	const cellDiff = row.cells[3];
 
-	// タイム表示更新
+	// タイム表示
 	cellTime.textContent = formatTimeShort(timeMs);
 
-	// 比較基準タイム（PB or Target）の取得
+	// 比較対象(基準タイム)の取得
 	let refTimeMs = null;
 	const hasPB = (personalBestSplits.length === segmentsData.length);
 
@@ -471,7 +415,6 @@ function recordSegmentTime(timeMs, index) {
 		refTimeMs = personalBestSplits[index];
 	} else {
 		const targetStr = segmentsData[index].target;
-		// 文字列から計算時に変換
 		const parsed = parseTimeInput(targetStr);
 		if (parsed !== null) {
 			refTimeMs = Math.round(parsed * 1000);
@@ -481,54 +424,71 @@ function recordSegmentTime(timeMs, index) {
 	// 差分の計算と表示
 	if (refTimeMs !== null && !isNaN(refTimeMs)) {
 		const diff = timeMs - refTimeMs;
-		const sign = diff >= 0 ? "+" : "-";
 		const diffAbs = Math.abs(diff);
+		const sign = diff >= 0 ? "+" : "-";
 
 		cellDiff.textContent = `${sign}${formatTimeShort(diffAbs)}`;
 
-		// 色付けクラスの適用
-		cellDiff.className = ""; // クラスリセット
+		// 色分け (速い=青/緑, 遅い=赤)
+		cellDiff.className = "";
 		if (diff < 0) {
-			cellDiff.classList.add("diff-minus"); // 速い（青/緑）
+			cellDiff.classList.add("diff-minus");
 		} else {
-			cellDiff.classList.add("diff-plus");  // 遅い（赤）
+			cellDiff.classList.add("diff-plus");
 		}
 	}
 }
 
 /**
- * 完走後に自己ベスト(PB)更新をチェックし、保存する関数
- * 現在のランの合計タイムと比較し、更新していればLocalStorageに保存する。
+ * 自己ベスト(PB)更新チェック
  */
 function checkAndSavePB() {
 	const hasPB = (personalBestSplits.length === segmentsData.length);
-	const currentTotal = currentRunSplits[currentRunSplits.length - 1];
-	// PBがない場合はInfinity（無限大）扱いとして必ず更新させる
+	const currentTotal = timerState.currentRunSplits[timerState.currentRunSplits.length - 1];
 	const pbTotal = hasPB ? personalBestSplits[personalBestSplits.length - 1] : Infinity;
 
-	// 今回のタイムがPBより速い場合
 	if (currentTotal < pbTotal) {
 		if (hasPB) {
 			const diff = (pbTotal - currentTotal) / 1000;
 			alert(`おめでとうございます！自己ベスト更新です！\n(-${diff.toFixed(3)}s)`);
 		} else {
-			alert("初完走おめでとうございます！記録を保存しました。\n次回からこの記録が「自己ベスト」として比較対象になります。");
+			alert("初完走おめでとうございます！記録を保存しました。");
 		}
 
-		// 新しい記録を保存
-		personalBestSplits = [...currentRunSplits];
+		personalBestSplits = [...timerState.currentRunSplits];
 		saveData();
-
-		// UI更新（次回の比較対象表示をPBに切り替えるため）
-		finishSetup();
+		finishSetup(); // 画面リセットしてPB表示に切り替え
 	}
 }
 
+/* ==========================================================================
+   7. HELPER FUNCTIONS (時間変換ヘルパー)
+   ========================================================================== */
+
 /**
- * ミリ秒を「hh:mm:ss.ms」形式の文字列に変換するヘルパー関数
- * メインタイマー表示用。
- * @param {number} ms - 変換対象のミリ秒
- * @returns {string} フォーマット済み文字列
+ * 時間文字列解析 ("1:30" -> 90秒)
+ */
+function parseTimeInput(str) {
+	if (!str) return null;
+
+	if (str.includes(':')) {
+		const parts = str.split(':').map(part => parseFloat(part));
+		if (parts.some(isNaN)) return null;
+
+		if (parts.length === 3) {
+			return (parts[0] * 3600) + (parts[1] * 60) + parts[2]; // hh:mm:ss
+		} else if (parts.length === 2) {
+			return (parts[0] * 60) + parts[1]; // mm:ss
+		}
+	} else {
+		const val = parseFloat(str);
+		return isNaN(val) ? null : val;
+	}
+	return null;
+}
+
+/**
+ * 時間フォーマット (hh:mm:ss.ms) - タイマー用
  */
 function formatTime(ms) {
 	const d = new Date(ms);
@@ -540,10 +500,7 @@ function formatTime(ms) {
 }
 
 /**
- * ミリ秒を短縮形式（分:秒.ミリ）に変換するヘルパー関数
- * テーブル表示用。時間が0の場合は「mm:ss.ms」形式にする。
- * @param {number} ms - 変換対象のミリ秒
- * @returns {string} フォーマット済み文字列
+ * 短縮時間フォーマット (分:秒.ミリ) - テーブル用
  */
 function formatTimeShort(ms) {
 	const d = new Date(ms);
@@ -559,42 +516,35 @@ function formatTimeShort(ms) {
 	}
 }
 
-/* 
-==========================================================================
-EVENT LISTENERS (イベント登録・初期化)
-========================================================================== 
-*/
+/* ==========================================================================
+   8. EVENT LISTENERS (イベント登録)
+   ========================================================================== */
 
-// DOM読み込み完了後にイベントを設定し、アプリを初期化する
 document.addEventListener('DOMContentLoaded', () => {
-	// タイマー操作ボタン
-	EL_BTN_START.addEventListener('click', startTimer);
-	EL_BTN_LAP.addEventListener('click', triggerLap);
-	EL_BTN_STOP.addEventListener('click', stopTimer);
+	// タイマー操作
+	EL.BTN_START.addEventListener('click', startTimer);
+	EL.BTN_LAP.addEventListener('click', triggerLap);
+	EL.BTN_STOP.addEventListener('click', stopTimer);
 
-	// 設定・データ操作ボタン
-	EL_BTN_ADD.addEventListener('click', addSegment);
-	EL_BTN_DONE.addEventListener('click', finishSetup);
-	EL_BTN_CLEAR.addEventListener('click', clearAllData);
-
-	// インポートボタン
-	EL_BTN_IMPORT.addEventListener('click', importSegments);
+	// 設定・データ操作
+	EL.BTN_ADD.addEventListener('click', addSegment);
+	EL.BTN_DONE.addEventListener('click', finishSetup);
+	EL.BTN_CLEAR.addEventListener('click', clearAllData);
+	EL.BTN_IMPORT.addEventListener('click', importSegments);
 
 	// モーダル操作
-	EL_BTN_HELP.addEventListener('click', () => {
-		EL_MODAL.style.display = "block";
+	EL.BTN_HELP.addEventListener('click', () => {
+		EL.MODAL.style.display = "block";
 	});
-	// 閉じるボタンクリックで非表示
-	EL_BTN_CLOSE_MODAL.addEventListener('click', () => {
-		EL_MODAL.style.display = "none";
+	EL.BTN_CLOSE_MODAL.addEventListener('click', () => {
+		EL.MODAL.style.display = "none";
 	});
-	// モーダル外側（背景）クリックで非表示
 	window.addEventListener('click', (event) => {
-		if (event.target == EL_MODAL) {
-			EL_MODAL.style.display = "none";
+		if (event.target == EL.MODAL) {
+			EL.MODAL.style.display = "none";
 		}
 	});
 
-	// アプリケーション初期化実行
+	// 初期化実行
 	initApp();
 });
