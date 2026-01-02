@@ -1,100 +1,106 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RTA Timer</title>
-    <link rel="stylesheet" href="style.css">
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>RTA Timer</title>
+	<link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-    <div class="container">
-        <h1>RTA Timer</h1>
+	<div class="container">
+		<h1>RTA Timer</h1>
 
-        <div style="text-align: right; margin-bottom: 10px;">
-            <button id="btn-help" class="btn-secondary" style="font-size: 0.9em;">使い方を表示</button>
-        </div>
+		<div style="text-align: right; margin-bottom: 10px;">
+			<button id="btn-help" class="btn-secondary" style="font-size: 0.9em;">使い方を表示</button>
+		</div>
 
-        <div id="setup-area">
-            <h3>ラップリスト & 目標設定</h3>
-            <p class="instruction">区間名と目標タイム(任意)を入力してください。<br>※最速記録は自動で保存されます。</p>
-            
-            <details class="import-section">
-                <summary>Excelなどから一括貼り付け (Import)</summary>
-                <div class="import-container">
-                    <p class="import-hint">
-                        <strong>形式:</strong> 「区間名」 または 「区間名 [タブ/カンマ] 目標タイム」<br>
-                        <span style="font-size: 0.9em; color: #666;">
-                        ※「1:30」や「90.5」などはスペース区切りでも認識されますが、<br>
-                         「0」や「120」などの<strong>整数のみ</strong>の場合は、区間名と誤認しないよう<strong>カンマ(,)</strong>で区切ってください。<br>
-                         (例: <code>Game Start, 0</code> / <code>Boss 1</code>)
-                        </span>
-                    </p>
-                    <textarea id="import-text" placeholder="入力例:&#10;Opening&#10;Game Start, 0&#10;Boss 1&#9;1:30&#10;Boss 2, 12:45.5"></textarea>
-                    <button id="btn-import" class="btn-secondary">インポート実行</button>
-                </div>
-            </details>
+		<div id="setup-area">
+			<h3>ラップリスト & 目標設定</h3>
+			<p class="instruction">区間名と目標タイム(任意)を入力してください。<br>※最速記録は自動で保存されます。</p>
 
-            <div id="segment-list-container">
-                </div>
+			<details class="import-section">
+				<summary>Excelなどから一括貼り付け (Import)</summary>
+				<div class="import-container">
+					<p class="import-hint">
+						<strong>形式:</strong> 「区間名」 または 「区間名 [タブ/カンマ] 目標タイム」<br>
+						<span style="font-size: 0.9em; color: #666;">
+							※「1:30」や「90.5」などはスペース区切りでも認識されますが、<br>
+							「0」や「120」などの<strong>整数のみ</strong>の場合は、区間名と誤認しないよう<strong>カンマ(,)</strong>で区切ってください。<br>
+							(例: <code>Game Start, 0</code> / <code>Boss 1</code>)
+						</span>
+					</p>
+					<textarea id="import-text"
+						placeholder="入力例:&#10;Opening&#10;Game Start, 0&#10;Boss 1&#9;1:30&#10;Boss 2, 12:45.5"></textarea>
+					<button id="btn-import" class="btn-secondary">インポート実行</button>
+				</div>
+			</details>
 
-            <div class="setup-controls">
-                <button id="btn-add-segment" class="btn-secondary">＋ 区間を追加</button>
-                <button id="btn-done-setup" class="btn-primary">セットアップ完了・リセット</button>
-                <button id="btn-clear-data" class="btn-danger-text">記録を全消去</button>
-            </div>
-        </div>
+			<div id="segment-list-container">
+			</div>
 
-        <hr>
+			<div class="setup-controls">
+				<button id="btn-add-segment" class="btn-secondary">＋ 区間を追加</button>
+				<button id="btn-done-setup" class="btn-primary">セットアップ完了・リセット</button>
+				<button id="btn-clear-data" class="btn-danger-text">記録を全消去</button>
+			</div>
+		</div>
 
-        <div id="timer-display">00:00:00.000</div>
+		<hr>
 
-        <div id="comparison-info">比較対象: <span id="comparison-target-name">---</span></div>
+		<div id="timer-display">00:00:00.000</div>
 
-        <div class="controls">
-            <button id="btn-start" class="btn-control">Start</button>
-            <button id="btn-lap" class="btn-control">Lap / Split</button>
-            <button id="btn-stop" class="btn-control">Stop</button>
-        </div>
+		<div id="comparison-info">比較対象: <span id="comparison-target-name">---</span></div>
 
-        <table id="lap-table">
-            <thead>
-                <tr>
-                    <th>区間名</th>
-                    <th>目標/Best</th>
-                    <th>タイム</th>
-                    <th>差 (Diff)</th>
-                </tr>
-            </thead>
-            <tbody id="lap-list-body">
-                </tbody>
-        </table>
-    </div>
+		<div class="controls">
+			<button id="btn-start" class="btn-control">Start</button>
+			<button id="btn-lap" class="btn-control">Lap / Split</button>
+			<button id="btn-stop" class="btn-control">Stop</button>
+		</div>
 
-    <div id="help-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal">&times;</span>
-            <h2>使い方</h2>
-            <div class="modal-text">
-                <p><strong>1. 区間の設定</strong><br>
-                「＋区間を追加」ボタンで区間を増やし、名前を入力してください。<br>
-                目標タイムを入力すると、計測中に差分が表示されます。<br>
-                <span style="color: #f44336; font-weight: bold;">※入力を変更した際は、必ず「セットアップ完了・リセット」ボタンを押してください。<br>押さないと下の計測テーブルに反映されません。</span></p>
-                
-                <p><strong>2. インポート機能</strong><br>
-                Excelやメモ帳で作ったリスト（区間名と時間）をコピーして、「一括貼り付け」からまとめて登録できます。<br>
-                整数の時間（0や90）を使う場合は、名前との間にカンマを入れてください。</p>
+		<table id="lap-table">
+			<thead>
+				<tr>
+					<th>区間名</th>
+					<th>目標/Best</th>
+					<th>タイム</th>
+					<th>差 (Diff)</th>
+				</tr>
+			</thead>
+			<tbody id="lap-list-body">
+			</tbody>
+		</table>
+	</div>
 
-                <p><strong>3. 計測</strong><br>
-                Startボタンまたはラップボタンで計測開始。<br>
-                区間ごとにラップボタンを押すと記録され、最後の区間で自動的にストップします。</p>
+	<div id="help-modal" class="modal">
+		<div class="modal-content">
+			<span class="close-modal">&times;</span>
+			<h2>使い方</h2>
+			<div class="modal-text">
+				<p><strong>1. 区間の設定</strong><br>
+					「＋区間を追加」ボタンで区間を増やし、名前を入力してください。<br>
+					目標タイムを入力すると、計測中に差分が表示されます。<br>
+					<span
+						style="color: #f44336; font-weight: bold;">※入力を変更した際は、必ず「セットアップ完了・リセット」ボタンを押してください。<br>押さないと下の計測テーブルに反映されません。</span>
+				</p>
 
-                <p><strong>4. データの保存</strong><br>
-                最速記録（自己ベスト）はブラウザに自動保存され、次回から比較対象になります。</p>
-            </div>
-        </div>
-    </div>
+				<p><strong>2. インポート機能</strong><br>
+					Excelやメモ帳で作ったリスト（区間名と時間）をコピーして、「一括貼り付け」からまとめて登録できます。<br>
+					整数の時間（0や90）を使う場合は、名前との間にカンマを入れてください。</p>
 
-    <script src="script.js"></script>
+				<p><strong>3. 計測</strong><br>
+					Startボタンまたはラップボタンで計測開始。<br>
+					区間ごとにラップボタンを押すと記録され、最後の区間で自動的にストップします。</p>
+
+				<p><strong>4. データの保存</strong><br>
+					最速記録（自己ベスト）はブラウザに自動保存され、次回から比較対象になります。</p>
+			</div>
+		</div>
+	</div>
+
+	<script src="script.js"></script>
 </body>
+
 </html>
