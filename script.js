@@ -14,14 +14,17 @@ const EL_BTN_DONE       = document.getElementById('btn-done-setup');
 const EL_BTN_CLEAR      = document.getElementById('btn-clear-data');
 const EL_LAP_LIST_BODY  = document.getElementById('lap-list-body');
 
-// インポート機能用UI（新規追加）
+// インポート機能用UI
 const EL_IMPORT_TEXT    = document.getElementById('import-text');
 const EL_BTN_IMPORT     = document.getElementById('btn-import');
 
 // --- アプリケーションの状態 ---
 
-// データ構造: { name: "区間名", target: "目標秒数(文字列)" } の配列
-// 初期値として4つの区間を設定
+/**
+ * 区間データの配列
+ * @type {Array<{name: string, target: string}>}
+ * name: 区間名, target: 目標タイム(秒・文字列)
+ */
 let segmentsData = [
     { name: "Area 1", target: "" },
     { name: "Boss 1", target: "" },
@@ -30,8 +33,10 @@ let segmentsData = [
     { name: "Timer Stop", target: "" }
 ];
 
-// ベスト記録（累積タイムの配列）[ms, ms, ms...]
-// 以前のセッションまたは完了したランから読み込まれる
+/**
+ * 自己ベスト記録（累積タイム）の配列
+ * @type {number[]} ミリ秒単位の経過時間の配列
+ */
 let personalBestSplits = []; 
 
 // タイマー計測用変数
@@ -54,9 +59,9 @@ const LS_KEY_DATA = "rta_timer_data_v2"; // データ保存用キー
  * 保存データの読み込み、UIの構築、初期状態のセットアップを順に実行する。
  */
 function initApp() {
-    loadData(); // LocalStorageから設定と記録を復元
-    renderSetupList(); // 設定画面の入力欄を生成
-    finishSetup(); // メイン画面のテーブルを初期化
+    loadData(); 
+    renderSetupList(); 
+    finishSetup(); 
 }
 
 /**
@@ -110,7 +115,7 @@ function clearAllData() {
 /**
  * テキストエリアから区間リストを一括インポートする関数
  * 改行区切りで区間を認識し、タブまたはカンマ区切りで「名前」と「目標タイム」を抽出する。
- * Excelからのコピペに対応。
+ * 「120」のような秒数、「1:30」のような分:秒、「1:30.55」のような小数を含む時間に対応。
  */
 function importSegments() {
     const text = EL_IMPORT_TEXT.value;
@@ -129,17 +134,18 @@ function importSegments() {
         if (!line.trim()) return; // 空行はスキップ
 
         // タブ(Excel)またはカンマ(CSV)で分割を試みる
-        // 例: "Opening" または "Opening\t120"
         let parts = line.split(/\t|,/);
         
         const name = parts[0].trim();
         let target = "";
 
-        // 2列目があり、かつ数値として解釈できる場合は目標タイムとする
+        // 2列目があり、かつ時間として解釈できる場合は目標タイムとする
         if (parts.length > 1) {
             const val = parts[1].trim();
-            if (val && !isNaN(val)) {
-                target = val;
+            // 時間解析関数を通す
+            const parsedSeconds = parseTimeInput(val);
+            if (parsedSeconds !== null) {
+                target = parsedSeconds.toString();
             }
         }
 
@@ -170,6 +176,37 @@ function importSegments() {
 }
 
 /**
+ * 文字列の時間表記を「秒数（数値）」に変換するヘルパー関数
+ * mm:ss や hh:mm:ss、および小数点（ミリ秒）に対応。
+ * @param {string} str - 入力文字列 (例: "1:30.5", "90", "1:05:20")
+ * @returns {number|null} 変換できた場合は秒数、失敗した場合はnull
+ */
+function parseTimeInput(str) {
+    if (!str) return null;
+    
+    // コロンが含まれている場合 (hh:mm:ss.ms または mm:ss.ms)
+    if (str.includes(':')) {
+        const parts = str.split(':').map(part => parseFloat(part));
+        // 数字以外が含まれていたら解析失敗
+        if (parts.some(isNaN)) return null;
+
+        if (parts.length === 3) {
+            // hh:mm:ss.ms -> 秒に換算
+            return (parts[0] * 3600) + (parts[1] * 60) + parts[2];
+        } else if (parts.length === 2) {
+            // mm:ss.ms -> 秒に換算
+            return (parts[0] * 60) + parts[1];
+        }
+    } 
+    // コロンがない場合（単なる秒数とみなす）
+    else {
+        const val = parseFloat(str);
+        return isNaN(val) ? null : val;
+    }
+    return null; // フォーマット不一致
+}
+
+/**
  * セットアップ画面の入力リストを描画する関数
  * segmentsDataに基づき、区間名と目標タイムの入力フィールドを動的に生成する。
  */
@@ -196,7 +233,9 @@ function renderSetupList() {
         inputTarget.type = "number";
         inputTarget.placeholder = "目標(秒)";
         inputTarget.value = seg.target;
-        inputTarget.title = "この区間までの目標累積時間（秒）を入力";
+        inputTarget.title = "目標タイム（秒）。小数入力可。";
+        // step属性を追加してinput type="number"でも小数を許容
+        inputTarget.step = "0.001"; 
         // 入力時に即時保存
         inputTarget.oninput = (e) => {
             segmentsData[index].target = e.target.value;
@@ -249,6 +288,7 @@ function removeSegment(index) {
 /**
  * セットアップを完了し、計測画面（テーブル）を初期化する関数
  * タイマーのリセット、比較対象（PBまたは目標）の決定、テーブルの再構築を行う。
+ * 目標タイムの小数点精度を考慮した計算を行う。
  */
 function finishSetup() {
     stopTimer();
@@ -277,7 +317,8 @@ function finishSetup() {
         if (hasPB) {
             refTimeMs = personalBestSplits[i];
         } else if (seg.target) {
-            refTimeMs = parseInt(seg.target) * 1000; // 秒をミリ秒へ変換
+            // parseFloatを使用し、ミリ秒精度を維持するため1000倍して四捨五入
+            refTimeMs = Math.round(parseFloat(seg.target) * 1000); 
         }
         colRef.textContent = refTimeMs ? formatTimeShort(refTimeMs) : "-";
         
@@ -401,11 +442,14 @@ function recordSegmentTime(timeMs, index) {
         refTimeMs = personalBestSplits[index];
     } else {
         const targetSec = segmentsData[index].target;
-        if (targetSec) refTimeMs = parseInt(targetSec) * 1000;
+        if (targetSec) {
+            // parseFloatを使用し、ミリ秒精度を維持するため1000倍して四捨五入
+            refTimeMs = Math.round(parseFloat(targetSec) * 1000);
+        }
     }
 
     // 差分の計算と表示
-    if (refTimeMs !== null) {
+    if (refTimeMs !== null && !isNaN(refTimeMs)) {
         const diff = timeMs - refTimeMs;
         const sign = diff >= 0 ? "+" : "-";
         const diffAbs = Math.abs(diff);
@@ -501,7 +545,7 @@ document.addEventListener('DOMContentLoaded', () => {
     EL_BTN_DONE.addEventListener('click', finishSetup);
     EL_BTN_CLEAR.addEventListener('click', clearAllData);
     
-    // インポートボタン（新規）
+    // インポートボタン
     EL_BTN_IMPORT.addEventListener('click', importSegments);
 
     // アプリケーション初期化実行
