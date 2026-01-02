@@ -9,7 +9,7 @@ body {
 }
 
 .container {
-    max-width: 600px;
+    max-width: 700px; /* 横幅を少し広げました */
     margin: 0 auto;
     background: #fff;
     padding: 20px;
@@ -21,9 +21,15 @@ body {
 #timer-display {
     font-size: 3.5em;
     font-weight: bold;
-    margin: 20px 0;
-    font-family: 'Courier New', Courier, monospace; /* 等幅フォント */
-    font-variant-numeric: tabular-nums; /* 数字の幅を揃える */
+    margin: 10px 0;
+    font-family: 'Courier New', Courier, monospace;
+    font-variant-numeric: tabular-nums;
+}
+
+#comparison-info {
+    font-size: 0.9em;
+    color: #666;
+    margin-bottom: 15px;
 }
 
 /* ボタン共通スタイル */
@@ -33,14 +39,8 @@ button {
     border-radius: 5px;
     transition: opacity 0.2s;
 }
-
-button:hover {
-    opacity: 0.8;
-}
-
-button:active {
-    transform: scale(0.98);
-}
+button:hover { opacity: 0.8; }
+button:active { transform: scale(0.98); }
 
 /* セットアップエリア */
 #setup-area {
@@ -51,6 +51,8 @@ button:active {
     background: #fafafa;
 }
 
+.instruction { font-size: 0.85em; color: #666; margin-bottom: 10px; }
+
 .segment-row {
     display: flex;
     align-items: center;
@@ -58,12 +60,22 @@ button:active {
     margin-bottom: 8px;
 }
 
-.segment-row input {
+.segment-row input[type="text"] {
     padding: 8px;
-    width: 70%;
+    flex: 2;
     margin-right: 5px;
     border: 1px solid #ccc;
     border-radius: 4px;
+}
+
+/* 目標時間の入力欄 */
+.segment-row input[type="number"] {
+    padding: 8px;
+    width: 60px;
+    margin-right: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    text-align: right;
 }
 
 .btn-remove {
@@ -74,20 +86,9 @@ button:active {
 }
 
 /* セットアップ用ボタン */
-.btn-secondary {
-    padding: 8px 16px;
-    background-color: #eee;
-    color: #333;
-    margin: 5px;
-}
-
-.btn-primary {
-    padding: 8px 16px;
-    background-color: #4CAF50;
-    color: white;
-    font-weight: bold;
-    margin: 5px;
-}
+.btn-secondary { padding: 8px 16px; background-color: #eee; color: #333; margin: 5px; }
+.btn-primary { padding: 8px 16px; background-color: #4CAF50; color: white; font-weight: bold; margin: 5px; }
+.btn-danger-text { background: none; color: #f44336; font-size: 0.8em; text-decoration: underline; margin-left: 10px;}
 
 /* メイン操作ボタン */
 .controls .btn-control {
@@ -106,41 +107,32 @@ button:active {
     margin: 20px auto;
     border-collapse: collapse;
     width: 100%;
-    table-layout: fixed; /* 列幅を固定レイアウトにする */
+    table-layout: fixed;
 }
 
 #lap-table th, #lap-table td {
     border: 1px solid #ddd;
-    padding: 12px;
-    /* セルの内容が溢れないように調整 */
+    padding: 10px 8px; /* パディングを少し調整 */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-size: 0.95em;
 }
 
-#lap-table th {
-    background-color: #eee;
-}
+#lap-table th { background-color: #eee; font-size: 0.9em; }
 
-/* 区間名列のスタイル */
-#lap-table th:nth-child(1),
-#lap-table td:nth-child(1) {
-    text-align: left;
-}
-
-/* タイム列のスタイル（幅固定・等幅フォント） */
-#lap-table th:nth-child(2),
-#lap-table td:nth-child(2) {
-    width: 150px; /* 幅を固定 */
-    text-align: center;
-    font-family: 'Courier New', Courier, monospace;
-    font-variant-numeric: tabular-nums;
-}
+/* 列ごとのスタイル調整 */
+#lap-table th:nth-child(1), #lap-table td:nth-child(1) { text-align: left; width: 30%; } /* 区間名 */
+#lap-table th:nth-child(2), #lap-table td:nth-child(2) { text-align: right; width: 22%; font-family: monospace; color: #666; } /* 目標/Best */
+#lap-table th:nth-child(3), #lap-table td:nth-child(3) { text-align: right; width: 26%; font-family: monospace; font-weight: bold; } /* タイム */
+#lap-table th:nth-child(4), #lap-table td:nth-child(4) { text-align: right; width: 22%; font-family: monospace; } /* 差 */
 
 /* 現在の区間のハイライト */
 .current-segment {
     background-color: #e0f7fa;
-    font-weight: bold;
-    /* borderの代わりにbox-shadowを使い、レイアウト崩れを防ぐ */
     box-shadow: inset 0 0 0 3px #00bcd4;
 }
+
+/* 差分の色分け */
+.diff-minus { color: #00b300; font-weight: bold; } /* 速い（緑） */
+.diff-plus { color: #e60000; font-weight: bold; }  /* 遅い（赤） */

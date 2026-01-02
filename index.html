@@ -12,18 +12,24 @@
         <h1>RTA Timer</h1>
 
         <div id="setup-area">
-            <h3>ラップリスト編集</h3>
+            <h3>ラップリスト & 目標設定</h3>
+            <p class="instruction">区間名と目標タイム(任意)を入力してください。<br>※最速記録は自動で保存されます。</p>
+            
             <div id="segment-list-container">
                 </div>
+
             <div class="setup-controls">
                 <button id="btn-add-segment" class="btn-secondary">＋ 区間を追加</button>
                 <button id="btn-done-setup" class="btn-primary">セットアップ完了・リセット</button>
+                <button id="btn-clear-data" class="btn-danger-text">記録を全消去</button>
             </div>
         </div>
 
         <hr>
 
         <div id="timer-display">00:00:00.000</div>
+
+        <div id="comparison-info">比較対象: <span id="comparison-target-name">---</span></div>
 
         <div class="controls">
             <button id="btn-start" class="btn-control">Start</button>
@@ -35,7 +41,9 @@
             <thead>
                 <tr>
                     <th>区間名</th>
+                    <th>目標/Best</th>
                     <th>タイム</th>
+                    <th>差 (Diff)</th>
                 </tr>
             </thead>
             <tbody id="lap-list-body">
