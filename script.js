@@ -19,10 +19,11 @@ const EL_LAP_LIST_BODY  = document.getElementById('lap-list-body');
 // データ構造: { name: "区間名", target: "目標秒数(文字列)" } の配列
 // 初期値として4つの区間を設定
 let segmentsData = [
-    { name: "Opening", target: "" },
+    { name: "Area 1", target: "" },
     { name: "Boss 1", target: "" },
+    { name: "Area 2", target: "" },
     { name: "Boss 2", target: "" },
-    { name: "Ending", target: "" }
+    { name: "Timer Stop", target: "" }
 ];
 
 // ベスト記録（累積タイムの配列）[ms, ms, ms...]
