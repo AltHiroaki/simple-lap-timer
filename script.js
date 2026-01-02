@@ -14,6 +14,10 @@ const EL_BTN_DONE       = document.getElementById('btn-done-setup');
 const EL_BTN_CLEAR      = document.getElementById('btn-clear-data');
 const EL_LAP_LIST_BODY  = document.getElementById('lap-list-body');
 
+// インポート機能用UI（新規追加）
+const EL_IMPORT_TEXT    = document.getElementById('import-text');
+const EL_BTN_IMPORT     = document.getElementById('btn-import');
+
 // --- アプリケーションの状態 ---
 
 // データ構造: { name: "区間名", target: "目標秒数(文字列)" } の配列
@@ -101,6 +105,68 @@ function clearAllData() {
     // 画面再描画
     renderSetupList();
     finishSetup();
+}
+
+/**
+ * テキストエリアから区間リストを一括インポートする関数
+ * 改行区切りで区間を認識し、タブまたはカンマ区切りで「名前」と「目標タイム」を抽出する。
+ * Excelからのコピペに対応。
+ */
+function importSegments() {
+    const text = EL_IMPORT_TEXT.value;
+    if (!text || !text.trim()) {
+        alert("テキストエリアが空です。貼り付けてから実行してください。");
+        return;
+    }
+
+    // ユーザーへの確認
+    if (!confirm("現在のリストを上書きしてインポートしますか？\n※既存の区間設定とベスト記録はリセットされます。")) return;
+
+    const lines = text.split('\n');
+    const newSegments = [];
+
+    lines.forEach(line => {
+        if (!line.trim()) return; // 空行はスキップ
+
+        // タブ(Excel)またはカンマ(CSV)で分割を試みる
+        // 例: "Opening" または "Opening\t120"
+        let parts = line.split(/\t|,/);
+        
+        const name = parts[0].trim();
+        let target = "";
+
+        // 2列目があり、かつ数値として解釈できる場合は目標タイムとする
+        if (parts.length > 1) {
+            const val = parts[1].trim();
+            if (val && !isNaN(val)) {
+                target = val;
+            }
+        }
+
+        if (name) {
+            newSegments.push({ name: name, target: target });
+        }
+    });
+
+    if (newSegments.length === 0) {
+        alert("有効なデータが見つかりませんでした。");
+        return;
+    }
+
+    // データの更新
+    segmentsData = newSegments;
+    personalBestSplits = []; // 区間が変わるためPBはリセット
+    EL_IMPORT_TEXT.value = ""; // 入力欄をクリア
+
+    saveData();
+    renderSetupList();
+    finishSetup();
+    
+    // detailsタグを閉じる（UIの見栄えのため）
+    const details = document.querySelector('.import-section');
+    if (details) details.removeAttribute('open');
+    
+    alert("インポートが完了しました。");
 }
 
 /**
@@ -434,6 +500,9 @@ document.addEventListener('DOMContentLoaded', () => {
     EL_BTN_ADD.addEventListener('click', addSegment);
     EL_BTN_DONE.addEventListener('click', finishSetup);
     EL_BTN_CLEAR.addEventListener('click', clearAllData);
+    
+    // インポートボタン（新規）
+    EL_BTN_IMPORT.addEventListener('click', importSegments);
 
     // アプリケーション初期化実行
     initApp();

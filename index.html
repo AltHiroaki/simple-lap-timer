@@ -15,6 +15,15 @@
             <h3>ラップリスト & 目標設定</h3>
             <p class="instruction">区間名と目標タイム(任意)を入力してください。<br>※最速記録は自動で保存されます。</p>
             
+            <details class="import-section">
+                <summary>Excelなどから一括貼り付け (Import)</summary>
+                <div class="import-container">
+                    <p class="import-hint">「区間名」または「区間名 [タブ] 目標秒数」の形式で貼り付けてください。</p>
+                    <textarea id="import-text" placeholder="例:&#10;Opening&#10;Boss 1&#10;Boss 2&#10;..."></textarea>
+                    <button id="btn-import" class="btn-secondary">インポート実行</button>
+                </div>
+            </details>
+
             <div id="segment-list-container">
                 </div>
 
