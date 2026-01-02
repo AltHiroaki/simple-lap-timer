@@ -1,8 +1,7 @@
-/**
- * ==========================================================================
- * CONSTANTS & VARIABLES (定義・状態管理)
- * ========================================================================== 
- */
+/* ==========================================================================
+   CONSTANTS & VARIABLES (定義・状態管理)
+   ========================================================================== */
+
 // --- UI要素の参照 ---
 const EL_TIMER_DISPLAY  = document.getElementById('timer-display');
 const EL_COMPARISON     = document.getElementById('comparison-target-name');
@@ -18,6 +17,11 @@ const EL_LAP_LIST_BODY  = document.getElementById('lap-list-body');
 // インポート機能用UI
 const EL_IMPORT_TEXT    = document.getElementById('import-text');
 const EL_BTN_IMPORT     = document.getElementById('btn-import');
+
+// ★新規追加: モーダル用UI
+const EL_BTN_HELP       = document.getElementById('btn-help');
+const EL_MODAL          = document.getElementById('help-modal');
+const EL_BTN_CLOSE_MODAL= document.querySelector('.close-modal');
 
 // --- アプリケーションの状態 ---
 
@@ -116,7 +120,7 @@ function clearAllData() {
 /**
  * テキストエリアから区間リストを一括インポートする関数
  * 改行区切りで区間を認識し、タブまたはカンマ区切りで「名前」と「目標タイム」を抽出する。
- * 変更: 時間文字列を変換せず、そのまま保存する仕様に変更。
+ * 時間文字列を変換せず、そのまま保存する仕様。
  */
 function importSegments() {
     const text = EL_IMPORT_TEXT.value;
@@ -143,8 +147,6 @@ function importSegments() {
         // 2列目がある場合、文字列としてそのまま取り込む
         if (parts.length > 1) {
             target = parts[1].trim();
-            // 一応、明らかなゴミデータ除去のためにparse checkしても良いが
-            // ユーザーが意図した文字列("1:30"等)をそのまま保持することを優先
         }
 
         if (name) {
@@ -207,7 +209,6 @@ function parseTimeInput(str) {
 /**
  * セットアップ画面の入力リストを描画する関数
  * segmentsDataに基づき、区間名と目標タイムの入力フィールドを動的に生成する。
- * 変更: input type="text" に変更し、文字列のまま表示する。
  */
 function renderSetupList() {
     EL_LIST_CONTAINER.innerHTML = "";
@@ -229,10 +230,10 @@ function renderSetupList() {
 
         // 目標タイム入力フィールド
         const inputTarget = document.createElement('input');
-        inputTarget.type = "text"; // ★numberからtextに変更
-        inputTarget.className = "input-target"; // ★CSS用のクラス付与
+        inputTarget.type = "text";
+        inputTarget.className = "input-target";
         inputTarget.placeholder = "目標(1:30等)";
-        inputTarget.value = seg.target; // 保存されている文字列("1:30")をそのまま表示
+        inputTarget.value = seg.target;
         inputTarget.title = "目標タイム。「90」や「1:30」のように入力可能。";
         
         // 入力時に即時保存
@@ -287,7 +288,7 @@ function removeSegment(index) {
 /**
  * セットアップを完了し、計測画面（テーブル）を初期化する関数
  * タイマーのリセット、比較対象（PBまたは目標）の決定、テーブルの再構築を行う。
- * 変更: 文字列の目標タイムをここで秒数に変換して計算に使用する。
+ * 文字列の目標タイムをここで秒数に変換して計算に使用する。
  */
 function finishSetup() {
     stopTimer();
@@ -444,7 +445,7 @@ function recordSegmentTime(timeMs, index) {
         refTimeMs = personalBestSplits[index];
     } else {
         const targetStr = segmentsData[index].target;
-        // ★修正点: 文字列から計算時に変換
+        // 文字列から計算時に変換
         const parsed = parseTimeInput(targetStr);
         if (parsed !== null) {
             refTimeMs = Math.round(parsed * 1000);
@@ -550,6 +551,22 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // インポートボタン
     EL_BTN_IMPORT.addEventListener('click', importSegments);
+
+    // ★新規追加: モーダル操作
+    // 使い方ボタンクリックで表示
+    EL_BTN_HELP.addEventListener('click', () => {
+        EL_MODAL.style.display = "block";
+    });
+    // 閉じるボタンクリックで非表示
+    EL_BTN_CLOSE_MODAL.addEventListener('click', () => {
+        EL_MODAL.style.display = "none";
+    });
+    // モーダル外側（背景）クリックで非表示
+    window.addEventListener('click', (event) => {
+        if (event.target == EL_MODAL) {
+            EL_MODAL.style.display = "none";
+        }
+    });
 
     // アプリケーション初期化実行
     initApp();
