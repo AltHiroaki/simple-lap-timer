@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RTA Timer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        <h1>RTA Timer</h1>
+
+        <div id="setup-area">
+            <h3>ラップリスト編集</h3>
+            <div id="segment-list-container">
+                </div>
+            <div class="setup-controls">
+                <button id="btn-add-segment" class="btn-secondary">＋ 区間を追加</button>
+                <button id="btn-done-setup" class="btn-primary">セットアップ完了・リセット</button>
+            </div>
+        </div>
+
+        <hr>
+
+        <div id="timer-display">00:00:00.000</div>
+
+        <div class="controls">
+            <button id="btn-start" class="btn-control">Start</button>
+            <button id="btn-lap" class="btn-control">Lap / Split</button>
+            <button id="btn-stop" class="btn-control">Stop</button>
+        </div>
+
+        <table id="lap-table">
+            <thead>
+                <tr>
+                    <th>区間名</th>
+                    <th>タイム</th>
+                </tr>
+            </thead>
+            <tbody id="lap-list-body">
+                </tbody>
+        </table>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
