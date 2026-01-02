@@ -18,7 +18,7 @@ const EL_LAP_LIST_BODY  = document.getElementById('lap-list-body');
 const EL_IMPORT_TEXT    = document.getElementById('import-text');
 const EL_BTN_IMPORT     = document.getElementById('btn-import');
 
-// ★新規追加: モーダル用UI
+// モーダル用UI
 const EL_BTN_HELP       = document.getElementById('btn-help');
 const EL_MODAL          = document.getElementById('help-modal');
 const EL_BTN_CLOSE_MODAL= document.querySelector('.close-modal');
@@ -119,8 +119,7 @@ function clearAllData() {
 
 /**
  * テキストエリアから区間リストを一括インポートする関数
- * 改行区切りで区間を認識し、タブまたはカンマ区切りで「名前」と「目標タイム」を抽出する。
- * 時間文字列を変換せず、そのまま保存する仕様。
+ * 修正: 全角スペースや半角スペース区切りにも対応
  */
 function importSegments() {
     const text = EL_IMPORT_TEXT.value;
@@ -138,20 +137,45 @@ function importSegments() {
     lines.forEach(line => {
         if (!line.trim()) return; // 空行はスキップ
 
-        // タブ(Excel)またはカンマ(CSV)で分割を試みる
-        let parts = line.split(/\t|,/);
-        
-        const name = parts[0].trim();
+        let name = line.trim();
         let target = "";
 
-        // 2列目がある場合、文字列としてそのまま取り込む
-        if (parts.length > 1) {
-            target = parts[1].trim();
+        // 1. 明確な区切り文字（タブ、カンマ、読点、全角スペース）があるかチェック
+        // \t=タブ, ,=カンマ, 、=読点, \u3000=全角スペース
+        const delimiterMatch = line.match(/[\t,、\u3000]/);
+
+        if (delimiterMatch) {
+            // 明確な区切り文字がある場合、それで分割
+            const parts = line.split(/[\t,、\u3000]/);
+            // 空白を除去して有効なパーツだけ抽出
+            const validParts = parts.map(p => p.trim()).filter(p => p !== "");
+            
+            if (validParts.length >= 2) {
+                name = validParts[0];
+                // 時間は最後の要素に入っていると仮定（間に空のセルなどがある場合への対策）
+                target = validParts[1]; 
+            }
+        } else {
+            // 2. 明確な区切りがない場合、半角スペースでの分割を試みる
+            // ただし "Boss 1" のような名前にスペースが入るケースを考慮し、
+            // 「末尾が時間っぽい形式（コロンやドットを含む）」の場合のみ分割する
+            const spaceMatch = line.match(/^(.*?)[\s]+([\d:.]+)$/);
+            
+            if (spaceMatch) {
+                const potentialName = spaceMatch[1];
+                const potentialTime = spaceMatch[2];
+
+                // 時間部分にコロン(:)かドット(.)が含まれている場合のみ時間とみなす
+                // 例: "Boss 1 1:30" -> OK ("Boss 1", "1:30")
+                // 例: "Boss 1" -> NG (時間がないのでそのまま名前にする)
+                if (potentialTime.includes(':') || potentialTime.includes('.')) {
+                    name = potentialName;
+                    target = potentialTime;
+                }
+            }
         }
 
-        if (name) {
-            newSegments.push({ name: name, target: target });
-        }
+        newSegments.push({ name: name, target: target });
     });
 
     if (newSegments.length === 0) {
@@ -230,10 +254,10 @@ function renderSetupList() {
 
         // 目標タイム入力フィールド
         const inputTarget = document.createElement('input');
-        inputTarget.type = "text";
+        inputTarget.type = "text"; 
         inputTarget.className = "input-target";
         inputTarget.placeholder = "目標(1:30等)";
-        inputTarget.value = seg.target;
+        inputTarget.value = seg.target; 
         inputTarget.title = "目標タイム。「90」や「1:30」のように入力可能。";
         
         // 入力時に即時保存
@@ -552,8 +576,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // インポートボタン
     EL_BTN_IMPORT.addEventListener('click', importSegments);
 
-    // ★新規追加: モーダル操作
-    // 使い方ボタンクリックで表示
+    // モーダル操作
     EL_BTN_HELP.addEventListener('click', () => {
         EL_MODAL.style.display = "block";
     });
