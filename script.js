@@ -115,7 +115,7 @@ function clearAllData() {
 /**
  * テキストエリアから区間リストを一括インポートする関数
  * 改行区切りで区間を認識し、タブまたはカンマ区切りで「名前」と「目標タイム」を抽出する。
- * ★修正点: 時間文字列を変換せず、そのまま保存する仕様に変更。
+ * 変更: 時間文字列を変換せず、そのまま保存する仕様に変更。
  */
 function importSegments() {
     const text = EL_IMPORT_TEXT.value;
@@ -206,7 +206,7 @@ function parseTimeInput(str) {
 /**
  * セットアップ画面の入力リストを描画する関数
  * segmentsDataに基づき、区間名と目標タイムの入力フィールドを動的に生成する。
- * ★修正点: input type="text" に変更し、文字列のまま表示する。
+ * 変更: input type="text" に変更し、文字列のまま表示する。
  */
 function renderSetupList() {
     EL_LIST_CONTAINER.innerHTML = "";
@@ -286,7 +286,7 @@ function removeSegment(index) {
 /**
  * セットアップを完了し、計測画面（テーブル）を初期化する関数
  * タイマーのリセット、比較対象（PBまたは目標）の決定、テーブルの再構築を行う。
- * ★修正点: 文字列の目標タイムをここで秒数に変換して計算に使用する。
+ * 変更: 文字列の目標タイムをここで秒数に変換して計算に使用する。
  */
 function finishSetup() {
     stopTimer();
@@ -443,7 +443,7 @@ function recordSegmentTime(timeMs, index) {
         refTimeMs = personalBestSplits[index];
     } else {
         const targetStr = segmentsData[index].target;
-        // 変更: 文字列から計算時に変換
+        // ★修正点: 文字列から計算時に変換
         const parsed = parseTimeInput(targetStr);
         if (parsed !== null) {
             refTimeMs = Math.round(parsed * 1000);
